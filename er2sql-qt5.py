@@ -229,17 +229,20 @@ class Coordinate_Map(QWidget):
         pen = QPen(Qt.black)
         pen.setWidth(5)
         qp.setPen(pen)
-        
+        qp.setFont(QFont('SimSun', 10))
         for i in range(map_state.hoffset,map_state.vertical_step*horizon_lines,map_state.vertical_step):
             for j in range(map_state.woffset,map_state.horizon_step*vertical_lines,map_state.horizon_step):
                 qp.drawPoint(j,i)
         #
         if cursor.state == "link" and cursor.press_state == "True":
-            
             qp.drawLine(cursor.press_position[0],cursor.press_position[1],cursor.x,cursor.y)
         
         for edge in graph.edges:
             qp.drawLine(edge.from_node.x,edge.from_node.y,edge.to_node.x,edge.to_node.y)
+            qp.setFont(QFont('SimSun', 25))
+            rect = QRect(int((cursor.x + cursor.press_position[0])/2),int((cursor.y + cursor.press_position[1])/2),50,50)
+            qp.drawText(rect,Qt.AlignCenter,edge.name)
+            qp.setFont(QFont('SimSun', 10))
         #draw graph
 
         qp.setBrush(QColor(255, 255, 0))
@@ -272,8 +275,6 @@ class Coordinate_Map(QWidget):
                         center = QPointF(graph_node.x+map_state.origin_offset[0],graph_node.y+map_state.origin_offset[1])
                         qp.drawEllipse(center, map_state.horizon_step,map_state.vertical_step)
                         qp.drawText(rect, Qt.AlignCenter, graph_node.name)
-        #draw edges
-        
             
     def mouseMoveEvent(self, e):
         global cursor
@@ -353,6 +354,10 @@ class Coordinate_Map(QWidget):
     def set_name(self,node,x,y):
         global line_edit
         line_edit = Input_Box("", self,node)
+        if cursor.state == "link":
+            my_regex = QtCore.QRegExp("1|m|n")
+            my_validator = QtGui.QRegExpValidator(my_regex, line_edit)
+            line_edit.setValidator(my_validator)
         line_edit.returnPressed.connect(self.lineEdit_function)
         line_edit.setGeometry(x,y, map_state.horizon_step*2, 40)
         line_edit.show()
@@ -377,8 +382,12 @@ class Coordinate_Map(QWidget):
                 (abs(cursor.y - (to_node.y +map_state.origin_offset[1]))<=20)):
                 node2 = to_node
                 break
-        if(node1 != "" and node2 != ""):
-            graph.edges.append(Edge(node1,node2))
+        edge = ""
+        if(node1 != "" and node2 != "" and node1 != node2):
+            edge = Edge(node1,node2)
+            graph.edges.append(edge)
+        if(edge != "" and (node1.type == "relation" or node2.type == "relation")):
+            self.set_name(edge,int((cursor.x+cursor.press_position[0])/2),int((cursor.y+cursor.press_position[1])/2))
         self.update()
         
 

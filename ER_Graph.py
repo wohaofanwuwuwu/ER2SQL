@@ -17,6 +17,9 @@ class Edge():
     def __init__(self,node1,node2) -> None:
         self.from_node = node1
         self.to_node   = node2
+        self.name = "1"
+    def set_name(self,num):
+        self.name = num
 class Graph():
     def __init__(self) -> None:
         self.nodes = []
