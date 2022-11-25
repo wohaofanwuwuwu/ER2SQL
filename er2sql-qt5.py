@@ -1,5 +1,6 @@
 import sys
 from enum import Enum
+from PyQt5 import sip
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
@@ -8,7 +9,7 @@ from PyQt5.QtCore import QSize,QPoint,QPointF
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenuBar, QMenu, 
                              QAction, QPlainTextEdit, QStyle, QFileDialog,
                              QMessageBox)
-from PyQt5.QtWidgets import (QWidget, QSlider, QApplication, QPushButton,
+from PyQt5.QtWidgets import (QWidget, QSlider, QApplication, QPushButton,QLineEdit,
     QHBoxLayout, QVBoxLayout)
 from ER_Graph import Node ,Graph,Edge
 
@@ -25,12 +26,16 @@ class Map_State():
         self.origin_offset=[0,0]#coordinate origin offset to window's left-up corner
         self.horizon_step= 65
         self.vertical_step= 30
-    
+class Input_Box(QLineEdit):
+    def __init__(self,str,s) -> None:
+        super().__init__(str,s)
+        self.name = ""
+
 cursor = cursor_state()
 map_state = Map_State()
 
 graph = Graph()
-
+line_edit = ""
 
 class main_window(QMainWindow):
 
@@ -183,13 +188,17 @@ class Coordinate_Map(QWidget):
 
     def initUI(self):
         self.setMinimumSize(1, 30)
+        self.center_layout = QVBoxLayout()
+    
+    def add_widget(self,widget):
+        self.center_layout.addWidget(widget)
 
     def paintEvent(self, e):
         qp = QPainter()
         qp.begin(self)
         self.drawmap(qp)
         qp.end()
-    
+
     def drawmap(self, qp):
         global map_state
         global graph
@@ -274,7 +283,14 @@ class Coordinate_Map(QWidget):
         global cursor
         global map_state
         global graph
+        global line_edit
         self.press_state = "True"
+        if line_edit != "":
+            sip.delete(line_edit)
+            line_edit = ""
+            return
+        if cursor.state == "default":
+            return
         cursor.x = event.x()
         cursor.y = event.y()
         real_x_pos = (cursor.x - map_state.origin_offset[0])
@@ -285,25 +301,44 @@ class Coordinate_Map(QWidget):
         real_y_pos-= mod_y_pos
         if  (mod_x_pos<= 20 and mod_y_pos <= 10):
             res = self.check_exist(real_x_pos,real_y_pos)
-            print(res)
             if (res == "null"):
+                if line_edit == "":
+                    self.set_name(cursor.x-map_state.horizon_step,cursor.y-20)
                 graph.nodes.append(Node(real_x_pos,real_y_pos,cursor.state))
         elif (mod_x_pos<= 20 and mod_y_pos >= 20):
             res = self.check_exist(real_x_pos,real_y_pos+map_state.vertical_step)
-            print(res)
             if (res == "null"):
+                if line_edit == "":
+                    self.set_name(cursor.x-map_state.horizon_step,cursor.y-20)
                 graph.nodes.append(Node(real_x_pos,real_y_pos+map_state.vertical_step,cursor.state))
         elif (mod_x_pos>= 45 and mod_y_pos <= 10):
             res = self.check_exist(real_x_pos+map_state.horizon_step,real_y_pos)
-            print(res)
             if (res == "null"):
+                if line_edit == "":
+                    self.set_name(cursor.x-map_state.horizon_step,cursor.y-20)
                 graph.nodes.append(Node(real_x_pos+map_state.horizon_step,real_y_pos,cursor.state))
         elif (mod_x_pos>= 45 and mod_y_pos >= 20):
             res = self.check_exist(real_x_pos+map_state.horizon_step,real_y_pos+map_state.vertical_step)
-            print(res)
             if (res == "null"):
+                if line_edit == "":
+                    self.set_name(cursor.x-map_state.horizon_step,cursor.y-20)
                 graph.nodes.append(Node(real_x_pos+map_state.horizon_step,real_y_pos+map_state.vertical_step,cursor.state))
         self.update()
+    
+    def lineEdit_function(self):
+        global line_edit
+        line_edit.name = line_edit.text()
+        sip.delete(line_edit)
+        line_edit = ""
+        self.update()
+
+    def set_name(self,x,y):
+        global line_edit
+        line_edit = Input_Box("", self)
+        line_edit.returnPressed.connect(self.lineEdit_function)
+        line_edit.setGeometry(x,y, map_state.horizon_step*2, 40)
+        line_edit.show()
+
     def mouseReleaseEvent(self, event):
         self.press_state = "False"
     
