@@ -5,7 +5,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QPainter, QFont, QColor, QPen,QPixmap,QCursor,QPolygon
-from PyQt5.QtCore import QSize,QPoint,QPointF
+from PyQt5.QtCore import QSize,QPoint,QPointF,QRect
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenuBar, QMenu, 
                              QAction, QPlainTextEdit, QStyle, QFileDialog,
                              QMessageBox)
@@ -27,9 +27,9 @@ class Map_State():
         self.horizon_step= 65
         self.vertical_step= 30
 class Input_Box(QLineEdit):
-    def __init__(self,str,s) -> None:
+    def __init__(self,str,s,node) -> None:
         super().__init__(str,s)
-        self.name = ""
+        self.node = node
 
 cursor = cursor_state()
 map_state = Map_State()
@@ -241,12 +241,14 @@ class Coordinate_Map(QWidget):
             #print("x={0},y={1},type={2}".format(graph_node.x,graph_node.y,graph_node.type))
             #check position visible
             if graph_node.x+map_state.origin_offset[0]<=w and graph_node.y + map_state.origin_offset[1] <=h:
-                match graph_node.type:
-                    case "object":
-                        qp.drawRect(graph_node.x-map_state.horizon_step+map_state.origin_offset[0],\
+                rect = QRect(graph_node.x-map_state.horizon_step+map_state.origin_offset[0],\
                             graph_node.y-map_state.vertical_step+map_state.origin_offset[1],\
                             map_state.horizon_step*2,\
                             map_state.vertical_step*2  )
+                match graph_node.type:
+                    case "object":
+                        qp.drawRect(rect)
+                        qp.drawText(rect, Qt.AlignCenter, graph_node.name)
                     case "relation":
                         points = QPolygon([QPoint(graph_node.x-map_state.horizon_step+map_state.origin_offset[0],\
                                                     graph_node.y+map_state.origin_offset[1]),\
@@ -258,10 +260,12 @@ class Coordinate_Map(QWidget):
                                                     graph_node.y-map_state.vertical_step+map_state.origin_offset[1])]\
                                             )
                         qp.drawPolygon(points)
+                        qp.drawText(rect, Qt.AlignCenter, graph_node.name)
                     case "attribute":
                         center = QPointF(graph_node.x+map_state.origin_offset[0],graph_node.y+map_state.origin_offset[1])
                         qp.drawEllipse(center, map_state.horizon_step,map_state.vertical_step)
-                                
+                        qp.drawText(rect, Qt.AlignCenter, graph_node.name)
+                        
     def mouseMoveEvent(self, e):
         global cursor
         global map_state
@@ -302,39 +306,39 @@ class Coordinate_Map(QWidget):
         if  (mod_x_pos<= 20 and mod_y_pos <= 10):
             res = self.check_exist(real_x_pos,real_y_pos)
             if (res == "null"):
-                if line_edit == "":
-                    self.set_name(cursor.x-map_state.horizon_step,cursor.y-20)
-                graph.nodes.append(Node(real_x_pos,real_y_pos,cursor.state))
+                node = Node(real_x_pos,real_y_pos,cursor.state)
+                self.set_name(node,cursor.x-map_state.horizon_step,cursor.y-20)
+                graph.nodes.append(node)
         elif (mod_x_pos<= 20 and mod_y_pos >= 20):
             res = self.check_exist(real_x_pos,real_y_pos+map_state.vertical_step)
             if (res == "null"):
-                if line_edit == "":
-                    self.set_name(cursor.x-map_state.horizon_step,cursor.y-20)
-                graph.nodes.append(Node(real_x_pos,real_y_pos+map_state.vertical_step,cursor.state))
+                node = Node(real_x_pos,real_y_pos+map_state.vertical_step,cursor.state)
+                self.set_name(node,cursor.x-map_state.horizon_step,cursor.y-20)
+                graph.nodes.append(node)
         elif (mod_x_pos>= 45 and mod_y_pos <= 10):
             res = self.check_exist(real_x_pos+map_state.horizon_step,real_y_pos)
             if (res == "null"):
-                if line_edit == "":
-                    self.set_name(cursor.x-map_state.horizon_step,cursor.y-20)
-                graph.nodes.append(Node(real_x_pos+map_state.horizon_step,real_y_pos,cursor.state))
+                node = Node(real_x_pos+map_state.horizon_step,real_y_pos,cursor.state)
+                self.set_name(node,cursor.x-map_state.horizon_step,cursor.y-20)
+                graph.nodes.append(node)
         elif (mod_x_pos>= 45 and mod_y_pos >= 20):
             res = self.check_exist(real_x_pos+map_state.horizon_step,real_y_pos+map_state.vertical_step)
             if (res == "null"):
-                if line_edit == "":
-                    self.set_name(cursor.x-map_state.horizon_step,cursor.y-20)
-                graph.nodes.append(Node(real_x_pos+map_state.horizon_step,real_y_pos+map_state.vertical_step,cursor.state))
+                node = Node(real_x_pos+map_state.horizon_step,real_y_pos+map_state.vertical_step,cursor.state)
+                self.set_name(node,cursor.x-map_state.horizon_step,cursor.y-20)
+                graph.nodes.append(node)
         self.update()
     
     def lineEdit_function(self):
         global line_edit
-        line_edit.name = line_edit.text()
+        line_edit.node.name = line_edit.text()
         sip.delete(line_edit)
         line_edit = ""
         self.update()
 
-    def set_name(self,x,y):
+    def set_name(self,node,x,y):
         global line_edit
-        line_edit = Input_Box("", self)
+        line_edit = Input_Box("", self,node)
         line_edit.returnPressed.connect(self.lineEdit_function)
         line_edit.setGeometry(x,y, map_state.horizon_step*2, 40)
         line_edit.show()
