@@ -265,7 +265,7 @@ class Coordinate_Map(QWidget):
                         center = QPointF(graph_node.x+map_state.origin_offset[0],graph_node.y+map_state.origin_offset[1])
                         qp.drawEllipse(center, map_state.horizon_step,map_state.vertical_step)
                         qp.drawText(rect, Qt.AlignCenter, graph_node.name)
-                        
+
     def mouseMoveEvent(self, e):
         global cursor
         global map_state
@@ -290,8 +290,7 @@ class Coordinate_Map(QWidget):
         global line_edit
         self.press_state = "True"
         if line_edit != "":
-            sip.delete(line_edit)
-            line_edit = ""
+            self.lineEdit_function()
             return
         if cursor.state == "default":
             return
