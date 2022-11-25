@@ -16,8 +16,10 @@ from ER_Graph import Node ,Graph,Edge
 class cursor_state():
     def __init__(self):
         self.state = "default"
+        self.press_state = "False"
         self.x = 0
         self.y = 0
+        self.press_position = [0,0] #position relatively offset for screen's left-up corner
 
 class Map_State():
     def __init__(self):
@@ -36,6 +38,7 @@ map_state = Map_State()
 
 graph = Graph()
 line_edit = ""
+link_success = "False"
 
 class main_window(QMainWindow):
 
@@ -145,40 +148,36 @@ class main_window(QMainWindow):
         global cursor
         pixmap = QPixmap('./images/move.jpeg')
         new_pixmap = pixmap.scaled(30,30)
-        cursor = QCursor(new_pixmap,8,10)
-        self.setCursor(cursor)
+        self.setCursor( QCursor(new_pixmap,15,15))
         cursor.state = "glove"
 
     def create_object(self):
         global cursor
         pixmap = QPixmap('./images/ER_object.jpg')
         new_pixmap = pixmap.scaled(50,30)
-        cursor = QCursor(new_pixmap,25,15)
-        self.setCursor(cursor)
+        self.setCursor( QCursor(new_pixmap,25,15))
         cursor.state = "object"
 
     def create_attribute(self):
         global cursor
         pixmap = QPixmap('./images/ER_attribute.jpg')
         new_pixmap = pixmap.scaled(30,30)
-        cursor = QCursor(new_pixmap,15,15)
-        self.setCursor(cursor)
+        self.setCursor( QCursor(new_pixmap,15,15))
         cursor.state = "attribute"
 
     def create_relation(self):
         global cursor
         pixmap = QPixmap('./images/ER_relation.jpg')
         new_pixmap = pixmap.scaled(30,30)
-        cursor = QCursor(new_pixmap,15,15)
-        self.setCursor(cursor)
+        temp = QCursor(new_pixmap,15,15)
+        self.setCursor(temp)
         cursor.state = "relation"
     
     def create_link(self):
         global cursor
         pixmap = QPixmap('./images/ER_link.png')
         new_pixmap = pixmap.scaled(30,30)
-        cursor = QCursor(new_pixmap,15,15)
-        self.setCursor(cursor)
+        self.setCursor( QCursor(new_pixmap,15,15))
         cursor.state = "link"
 
 class Coordinate_Map(QWidget):
@@ -202,11 +201,12 @@ class Coordinate_Map(QWidget):
     def drawmap(self, qp):
         global map_state
         global graph
+        global cursor
         #set background color
         size = self.size()
         w = size.width()
-        h = size.height()
-        
+        h = size.height()            
+            
         qp.setPen(QColor(255, 255, 255))
         qp.setBrush(QColor(255, 255, 184))
         qp.drawRect(0, 0, w, h)
@@ -226,13 +226,20 @@ class Coordinate_Map(QWidget):
         for i in range(0,map_state.horizon_step*vertical_lines,map_state.horizon_step):
             qp.drawLine(i+map_state.woffset,0,i+map_state.woffset,h)
 
-        pen = QPen(Qt.red)
+        pen = QPen(Qt.black)
         pen.setWidth(5)
         qp.setPen(pen)
         
         for i in range(map_state.hoffset,map_state.vertical_step*horizon_lines,map_state.vertical_step):
             for j in range(map_state.woffset,map_state.horizon_step*vertical_lines,map_state.horizon_step):
                 qp.drawPoint(j,i)
+        #
+        if cursor.state == "link" and cursor.press_state == "True":
+            
+            qp.drawLine(cursor.press_position[0],cursor.press_position[1],cursor.x,cursor.y)
+        
+        for edge in graph.edges:
+            qp.drawLine(edge.from_node.x,edge.from_node.y,edge.to_node.x,edge.to_node.y)
         #draw graph
 
         qp.setBrush(QColor(255, 255, 0))
@@ -265,20 +272,25 @@ class Coordinate_Map(QWidget):
                         center = QPointF(graph_node.x+map_state.origin_offset[0],graph_node.y+map_state.origin_offset[1])
                         qp.drawEllipse(center, map_state.horizon_step,map_state.vertical_step)
                         qp.drawText(rect, Qt.AlignCenter, graph_node.name)
-
+        #draw edges
+        
+            
     def mouseMoveEvent(self, e):
         global cursor
         global map_state
         x = e.x()
         y = e.y()
-        map_state.woffset+= x-cursor.x
-        map_state.origin_offset[0]+=x-cursor.x
-        map_state.woffset%=map_state.horizon_step
-        map_state.hoffset+= y-cursor.y
-        map_state.origin_offset[1]+=y-cursor.y
-        map_state.hoffset%=map_state.vertical_step
+        
         #print("x={0},y={1}".format(map_state.woffset,map_state.hoffset))
         if cursor.state == "glove":
+            map_state.woffset+= x-cursor.x
+            map_state.origin_offset[0]+=x-cursor.x
+            map_state.woffset%=map_state.horizon_step
+            map_state.hoffset+= y-cursor.y
+            map_state.origin_offset[1]+=y-cursor.y
+            map_state.hoffset%=map_state.vertical_step
+            self.update()
+        if cursor.state == "link":
             self.update()
         cursor.x = x
         cursor.y = y
@@ -288,19 +300,22 @@ class Coordinate_Map(QWidget):
         global map_state
         global graph
         global line_edit
-        self.press_state = "True"
+        cursor.press_state = "True"
         if line_edit != "":
             self.lineEdit_function()
             return
-        if cursor.state == "default":
-            return
+        cursor.press_position[0]=event.x()
+        cursor.press_position[1]=event.y()
         cursor.x = event.x()
         cursor.y = event.y()
+        if cursor.state == "default" or cursor.state == "glove" or cursor.state == "link":
+            return
         real_x_pos = (cursor.x - map_state.origin_offset[0])
         mod_x_pos = real_x_pos%map_state.horizon_step
-        real_x_pos -=mod_x_pos 
         real_y_pos = (cursor.y - map_state.origin_offset[1])
         mod_y_pos = real_y_pos%map_state.vertical_step
+        
+        real_x_pos -=mod_x_pos 
         real_y_pos-= mod_y_pos
         if  (mod_x_pos<= 20 and mod_y_pos <= 10):
             res = self.check_exist(real_x_pos,real_y_pos)
@@ -343,8 +358,30 @@ class Coordinate_Map(QWidget):
         line_edit.show()
 
     def mouseReleaseEvent(self, event):
-        self.press_state = "False"
-    
+        global cursor
+        global graph
+        node1 = ""
+        node2 = ""
+        cursor.press_state = "False"
+        self.update()
+        if cursor.state != "link":
+            return
+        for from_node in graph.nodes:
+            if (abs(cursor.press_position[0]-(from_node.x +map_state.origin_offset[0]) <= 40) and \
+                abs(cursor.press_position[1] - (from_node.y+map_state.origin_offset[1])<= 20)):
+                node1 = from_node
+                break
+
+        for to_node in graph.nodes:
+            if(abs(cursor.x - (to_node.x +map_state.origin_offset[0])) <=40 and \
+                (abs(cursor.y - (to_node.y +map_state.origin_offset[1]))<=20)):
+                node2 = to_node
+                break
+        if(node1 != "" and node2 != ""):
+            graph.edges.append(Edge(node1,node2))
+        self.update()
+        
+
     def check_exist(self,x,y):
         global graph
         for node in graph.nodes:
