@@ -9,7 +9,7 @@ class Node():
         self.y =y
         self.type = type
         self.name = name
-        
+        self.iskey = "False"
     def set_name(self,name):
         self.name = name
 
@@ -17,7 +17,7 @@ class Edge():
     def __init__(self,node1,node2) -> None:
         self.from_node = node1
         self.to_node   = node2
-        self.name = "1"
+        self.name = ""
     def set_name(self,num):
         self.name = num
 class Graph():
@@ -38,7 +38,7 @@ class SQL_Relation():
 class SQL_Attribute():
     def __init__(self,name) -> None:
         self.name = name
-        self.type = "char"
+        self.type = "CHAR"
         self.len = 50
 class SQL_Table():
     def __init__(self,name,pos) -> None:

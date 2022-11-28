@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenuBar, QMenu,
                              QAction, QPlainTextEdit, QStyle, QFileDialog,
                              QMessageBox)
 from PyQt5.QtWidgets import (QWidget, QSlider, QApplication, QPushButton,QLineEdit,
-    QHBoxLayout, QVBoxLayout)
+    QHBoxLayout, QVBoxLayout,qApp)
 from ER_Graph import Node ,Graph,Edge,SQL_Table,SQL_Attribute,SQL_Relation
 
 class cursor_state():
@@ -247,6 +247,8 @@ class main_window(QMainWindow):
         self.setCursor( QCursor(new_pixmap,15,15))
         cursor.state = "link"
 
+    
+
 class Text_Box(QPlainTextEdit):
     def __init__(self) -> None:
         super().__init__()
@@ -267,7 +269,7 @@ class Text_Box(QPlainTextEdit):
         self.relations.append(relation)
         return relation
     def add_attribute(self,table,att):
-        insert_str = att.type+" "+att.name+" ;\n"
+        insert_str = att.name+" "+att.type+" "+" ,\n"
         self.text = self.text[:table.str_pos] + insert_str + self.text[table.str_pos:]
         table.attribute_names.append(att.name)
         table.str_pos += len(insert_str)
@@ -364,6 +366,7 @@ class Coordinate_Map(QWidget):
                     case "object":
                         qp.drawRect(rect)
                         qp.drawText(rect, Qt.AlignCenter, graph_node.name)
+                        
                     case "relation":
                         points = QPolygon([QPoint(graph_node.x-map_state.horizon_step+map_state.origin_offset[0],\
                                                     graph_node.y+map_state.origin_offset[1]),\
@@ -377,10 +380,17 @@ class Coordinate_Map(QWidget):
                         qp.drawPolygon(points)
                         qp.drawText(rect, Qt.AlignCenter, graph_node.name)
                     case "attribute":
+                        if graph_node.iskey == "True":
+                            pen = QPen(Qt.red)
+                            pen.setWidth(5)
+                            qp.setPen(pen)
                         center = QPointF(graph_node.x+map_state.origin_offset[0],graph_node.y+map_state.origin_offset[1])
                         qp.drawEllipse(center, map_state.horizon_step,map_state.vertical_step)
                         qp.drawText(rect, Qt.AlignCenter, graph_node.name)
-            
+            pen =  QPen(Qt.black)
+            pen.setWidth(5)
+            qp.setPen(pen)
+
     def mouseMoveEvent(self, e):
         global cursor
         global map_state
@@ -504,7 +514,22 @@ class Coordinate_Map(QWidget):
             else:
                 return "exist"
         return "null"
-
+    def contextMenuEvent(self, event):
+        global graph
+        x=event.x()
+        y=event.y()
+        cmenu = QMenu(self)
+        quitAct = cmenu.addAction("设置为主键")
+        for node in graph.nodes:
+            if node.type != "attribute":
+                continue
+            if abs(x-(node.x +map_state.origin_offset[0])) <= 40 and \
+                abs(y-(node.y+map_state.origin_offset[1]))<= 20 :
+                action = cmenu.exec_(self.mapToGlobal(event.pos()))
+                if action == quitAct:
+                    node.iskey = "True"
+                    self.update()
+                    return
 if __name__ == '__main__':
 
     app = QApplication(sys.argv)
