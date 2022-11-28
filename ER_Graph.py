@@ -38,6 +38,8 @@ class SQL_Relation():
 class SQL_Attribute():
     def __init__(self,name) -> None:
         self.name = name
+        self.type = "char"
+        self.len = 50
 class SQL_Table():
     def __init__(self,name,pos) -> None:
         self.name = name

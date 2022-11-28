@@ -113,7 +113,8 @@ class main_window(QMainWindow):
                     if table == "False":
                          table = self.text_box.create_table(edge.from_node.name)   
                     if edge.to_node.type == "attribute":
-                        self.text_box.add_attribute(table,edge.to_node.name)
+                        att = SQL_Attribute(edge.to_node.name)
+                        self.text_box.add_attribute(table,att)
                     if edge.to_node.type == "relation":
                         relation = self.text_box.find_relation(edge.to_node.name)
                         if relation == "False":
@@ -128,7 +129,8 @@ class main_window(QMainWindow):
                     table = self.text_box.find_table(edge.to_node.name)
                     if table == "False":
                         table = self.text_box.create_table(edge.to_node.name)
-                    self.text_box.add_attribute(table,edge.from_node.name)
+                    att = SQL_Attribute(edge.from_node.name)
+                    self.text_box.add_attribute(table,att)
                 case "relation":
                     if edge.to_node.type != "object":
                         pass
@@ -254,18 +256,21 @@ class Text_Box(QPlainTextEdit):
         self.pos = 0
     def create_table(self,table_name):
         self.text = (self.text +"CREATE TABLE "+table_name+"(\n")
-        table = SQL_Table(table_name,self.pos+1)
+        table = SQL_Table(table_name,self.pos+len(self.text))
         self.text = self.text + ");\n"
         self.tables.append(table)
-        self.pos += 2
+        self.pos += len(self.text)
         return table
 
     def create_relation(self,relation_name):
         relation = SQL_Relation(relation_name)
         self.relations.append(relation)
         return relation
-    def add_attribute(self,table,name):
-
+    def add_attribute(self,table,att):
+        insert_str = att.type+" "+att.name+" ;\n"
+        self.text = self.text[:table.str_pos] + insert_str + self.text[table.str_pos:]
+        table.attribute_names.append(att.name)
+        table.str_pos += len(insert_str)
         pass
 
     def find_table(self,table_name):
