@@ -114,10 +114,32 @@ class main_window(QMainWindow):
                          table = self.text_box.create_table(edge.from_node.name)   
                     if edge.to_node.type == "attribute":
                         self.text_box.add_attribute(table,edge.to_node.name)
+                    if edge.to_node.type == "relation":
+                        relation = self.text_box.find_relation(edge.to_node.name)
+                        if relation == "False":
+                            relation = self.text_box.create_relation(edge.to_node.name)
+                            relation.object1 = edge.to_node
+                        else:
+                            relation.object2 = edge.to_node
                 case "attribute":
-                    pass
+                    if edge.to_node.type != "object":
+                        continue
+                        #@TODO rise error 
+                    table = self.text_box.find_table(edge.to_node.name)
+                    if table == "False":
+                        table = self.text_box.create_table(edge.to_node.name)
+                    self.text_box.add_attribute(table,edge.from_node.name)
                 case "relation":
-                    pass
+                    if edge.to_node.type != "object":
+                        pass
+                        #TODO rise error
+                    relation = self.text_box.find_relation(edge.from_node.name)
+                    if relation == "False":
+                        relation = self.text_box.create_relation()
+                        relation.object1 = edge.to_node
+                    else:
+                        relation.object2 = edge.to_node
+                    
         print(self.text_box.text)
         self.text_box.setPlainText(self.text_box.text)
         self.add_widgets(self.text_box)
@@ -227,21 +249,37 @@ class Text_Box(QPlainTextEdit):
     def __init__(self) -> None:
         super().__init__()
         self.text = ""
-        self.table = []
+        self.tables = []
+        self.relations = []
         self.pos = 0
     def create_table(self,table_name):
         self.text = (self.text +"CREATE TABLE "+table_name+"(\n")
         table = SQL_Table(table_name,self.pos+1)
         self.text = self.text + ");\n"
-        self.table.append(table)
+        self.tables.append(table)
+        self.pos = 2
+        return table
+
+    def create_relation(self,relation_name):
+        relation = SQL_Relation(relation_name)
+        self.relations.append(relation)
+        return relation
     def add_attribute(self,table,name):
-        table.
+
+        pass
+
     def find_table(self,table_name):
         for table in self.table:
-            if table.name is table_name:
+            if table.name == table_name:
                 return table
         return "False"
-     
+
+    def find_relation(self,relation_name):
+        for relation in self.relation_names:
+            if relation.name == relation_name:
+                return relation
+        return "False"
+
 class Coordinate_Map(QWidget):
     def __init__(self):
         super().__init__()
@@ -302,7 +340,7 @@ class Coordinate_Map(QWidget):
         for edge in graph.edges:
             qp.drawLine(edge.from_node.x,edge.from_node.y,edge.to_node.x,edge.to_node.y)
             qp.setFont(QFont('SimSun', 25))
-            rect = QRect(int((cursor.x + cursor.press_position[0])/2),int((cursor.y + cursor.press_position[1])/2),50,50)
+            rect = QRect(int((edge.from_node.x + edge.to_node.x)/2),int((edge.from_node.y + edge.to_node.y)/2),50,50)
             qp.drawText(rect,Qt.AlignCenter,edge.name)
             qp.setFont(QFont('SimSun', 10))
         #draw graph
@@ -435,7 +473,7 @@ class Coordinate_Map(QWidget):
             return
         for from_node in graph.nodes:
             if (abs(cursor.press_position[0]-(from_node.x +map_state.origin_offset[0]) <= 40) and \
-                abs(cursor.press_position[1] - (from_node.y+map_state.origin_offset[1])<= 20)):
+                abs(cursor.press_position[1] - (from_node.y+map_state.origin_offset[1]))<= 20):
                 node1 = from_node
                 break
 

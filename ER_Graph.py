@@ -25,11 +25,22 @@ class Graph():
         self.nodes = []
         self.edges = []
         self.num = 0
-class Attribute():
-    def __init__(self) -> None:
-        self.
+class SQL_Relation():
+    def __init__(self,name) -> None:
+        self.name = name
+        self.object1 = ""
+        self.object2 = ""
+    def add_relation(self,obj):
+        if self.object1 == "":
+            self.object1 = obj
+        else:
+            self.object2 = obj 
+class SQL_Attribute():
+    def __init__(self,name) -> None:
+        self.name = name
 class SQL_Table():
     def __init__(self,name,pos) -> None:
         self.name = name
         self.str_pos = pos
         self.attribute_names = []
+        self.relation_names = []
