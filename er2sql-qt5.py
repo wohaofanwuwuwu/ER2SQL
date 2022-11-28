@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenuBar, QMenu,
                              QMessageBox)
 from PyQt5.QtWidgets import (QWidget, QSlider, QApplication, QPushButton,QLineEdit,
     QHBoxLayout, QVBoxLayout)
-from ER_Graph import Node ,Graph,Edge,SQL_Table
+from ER_Graph import Node ,Graph,Edge,SQL_Table,SQL_Attribute,SQL_Relation
 
 class cursor_state():
     def __init__(self):
@@ -257,7 +257,7 @@ class Text_Box(QPlainTextEdit):
         table = SQL_Table(table_name,self.pos+1)
         self.text = self.text + ");\n"
         self.tables.append(table)
-        self.pos = 2
+        self.pos += 2
         return table
 
     def create_relation(self,relation_name):
@@ -269,13 +269,13 @@ class Text_Box(QPlainTextEdit):
         pass
 
     def find_table(self,table_name):
-        for table in self.table:
+        for table in self.tables:
             if table.name == table_name:
                 return table
         return "False"
 
     def find_relation(self,relation_name):
-        for relation in self.relation_names:
+        for relation in self.relations:
             if relation.name == relation_name:
                 return relation
         return "False"
