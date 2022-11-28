@@ -25,3 +25,11 @@ class Graph():
         self.nodes = []
         self.edges = []
         self.num = 0
+class Attribute():
+    def __init__(self) -> None:
+        self.
+class SQL_Table():
+    def __init__(self,name,pos) -> None:
+        self.name = name
+        self.str_pos = pos
+        self.attribute_names = []

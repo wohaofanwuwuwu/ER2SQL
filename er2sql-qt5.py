@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenuBar, QMenu,
                              QMessageBox)
 from PyQt5.QtWidgets import (QWidget, QSlider, QApplication, QPushButton,QLineEdit,
     QHBoxLayout, QVBoxLayout)
-from ER_Graph import Node ,Graph,Edge
+from ER_Graph import Node ,Graph,Edge,SQL_Table
 
 class cursor_state():
     def __init__(self):
@@ -69,7 +69,7 @@ class main_window(QMainWindow):
         center_widget.setLayout(layout)
         coordinate_map = Coordinate_Map()
         self.coordinate_map = coordinate_map
-        text_box = QPlainTextEdit(self)
+        text_box = Text_Box()
         text_box.setReadOnly(True)
         self.text_box = text_box
         self.text_box.setParent(None)
@@ -94,7 +94,7 @@ class main_window(QMainWindow):
         self.new_file(fileMenu,style)
         self.save_file(fileMenu,style)
         self.saveas_file(fileMenu,style)
-        self.generate_sql(changeMenu,style)
+        self.exchange_vision(changeMenu,style)
 
     def onFileNew(self):
         pass
@@ -102,13 +102,28 @@ class main_window(QMainWindow):
         self.text_box.setParent(None)
         self.add_widgets(self.coordinate_map)
         self.update()
-        pass
+        
     def check_sql(self):
+        global graph
         self.coordinate_map.setParent(None)
+        for edge in graph.edges:
+            match edge.from_node.type:
+                case "object":
+                    table = self.text_box.find_table(edge.name)
+                    if table == "False":
+                         table = self.text_box.create_table(edge.from_node.name)   
+                    if edge.to_node.type == "attribute":
+                        self.text_box.add_attribute(table,edge.to_node.name)
+                case "attribute":
+                    pass
+                case "relation":
+                    pass
+        print(self.text_box.text)
+        self.text_box.setPlainText(self.text_box.text)
         self.add_widgets(self.text_box)
         self.update()
         pass
-    def generate_sql(self,changeMenu,style):
+    def exchange_vision(self,changeMenu,style):
         check_er = QAction('ER图',self)
         check_er.setIcon(style.standardIcon(QStyle.SP_FileIcon))
         check_er.triggered.connect(self.check_er)
@@ -208,6 +223,25 @@ class main_window(QMainWindow):
         self.setCursor( QCursor(new_pixmap,15,15))
         cursor.state = "link"
 
+class Text_Box(QPlainTextEdit):
+    def __init__(self) -> None:
+        super().__init__()
+        self.text = ""
+        self.table = []
+        self.pos = 0
+    def create_table(self,table_name):
+        self.text = (self.text +"CREATE TABLE "+table_name+"(\n")
+        table = SQL_Table(table_name,self.pos+1)
+        self.text = self.text + ");\n"
+        self.table.append(table)
+    def add_attribute(self,table,name):
+        table.
+    def find_table(self,table_name):
+        for table in self.table:
+            if table.name is table_name:
+                return table
+        return "False"
+     
 class Coordinate_Map(QWidget):
     def __init__(self):
         super().__init__()
