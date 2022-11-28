@@ -2,6 +2,7 @@ import sys
 from enum import Enum
 from PyQt5 import sip
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QToolBar
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QPainter, QFont, QColor, QPen,QPixmap,QCursor,QPolygon
@@ -67,6 +68,11 @@ class main_window(QMainWindow):
         self.center_layout = layout
         center_widget.setLayout(layout)
         coordinate_map = Coordinate_Map()
+        self.coordinate_map = coordinate_map
+        text_box = QPlainTextEdit(self)
+        text_box.setReadOnly(True)
+        self.text_box = text_box
+        self.text_box.setParent(None)
         self.add_widgets(coordinate_map)
 
     def add_widgets(self,widget):
@@ -88,10 +94,31 @@ class main_window(QMainWindow):
         self.new_file(fileMenu,style)
         self.save_file(fileMenu,style)
         self.saveas_file(fileMenu,style)
+        self.generate_sql(changeMenu,style)
 
     def onFileNew(self):
         pass
-    
+    def check_er(self):
+        self.text_box.setParent(None)
+        self.add_widgets(self.coordinate_map)
+        self.update()
+        pass
+    def check_sql(self):
+        self.coordinate_map.setParent(None)
+        self.add_widgets(self.text_box)
+        self.update()
+        pass
+    def generate_sql(self,changeMenu,style):
+        check_er = QAction('ER图',self)
+        check_er.setIcon(style.standardIcon(QStyle.SP_FileIcon))
+        check_er.triggered.connect(self.check_er)
+        changeMenu.addAction(check_er)
+        check_sql = QAction('SQL语句',self)
+        style.standardIcon(QStyle.SP_FileIcon)
+        check_sql.setIcon(style.standardIcon(QStyle.SP_FileIcon))
+        check_sql.triggered.connect(self.check_sql)
+        changeMenu.addAction(check_sql)
+
     def new_file(self,fileMenu,style):
         
         FileNew = QAction('新建(&N)', self)
@@ -120,10 +147,11 @@ class main_window(QMainWindow):
         fileMenu.addAction(FileSaveAs)
 
     def initToolBar(self):
-        ToolBar = self.addToolBar("tool")
-        ToolBar.setIconSize(QSize(100,50))
+        toolbar =  QToolBar("tool",self)
+        self.addToolBar(Qt.LeftToolBarArea,toolbar)
+        toolbar.setIconSize(QSize(100,50))
         #ToolBar.setOrientation(Qt.Vertical)
-        ToolBar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        toolbar.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         #ToolBar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         #new action
         er_object = QAction(QIcon("./images/ER_object.jpg"),"&实体",self)
@@ -138,11 +166,11 @@ class main_window(QMainWindow):
 
         move_area = QAction(QIcon("./images/move.jpeg"),"&挪动",self)
         move_area.triggered.connect(self.Move_Area)
-        ToolBar.addAction(er_object)
-        ToolBar.addAction(er_relation)
-        ToolBar.addAction(er_attribute)
-        ToolBar.addAction(er_link)
-        ToolBar.addAction(move_area)
+        toolbar.addAction(er_object)
+        toolbar.addAction(er_relation)
+        toolbar.addAction(er_attribute)
+        toolbar.addAction(er_link)
+        toolbar.addAction(move_area)
 
     def Move_Area(self):
         global cursor
