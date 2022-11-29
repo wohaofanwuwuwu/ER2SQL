@@ -120,7 +120,7 @@ class main_window(QMainWindow):
         node_num = int(lines[0])
         for i in range(node_num):
             i=i*4
-            node = Node(int(lines[i+2]),int(lines[i+3]),lines[i+4],lines[i+1])
+            node = Node(int(lines[i+2]),int(lines[i+3]),lines[i+4].strip(),lines[i+1].strip())
             graph.nodes.append(node)
         edge_num =int(lines[node_num*4+1])
         start_pos = node_num *4+2
@@ -128,7 +128,7 @@ class main_window(QMainWindow):
             node1 = graph.nodes[int(lines[start_pos+i*3+1])]
             node2 = graph.nodes[int(lines[start_pos+i*3+2])]
             edge = Edge(node1,node2)
-            edge.set_name(lines[start_pos+i*3])
+            edge.set_name(lines[start_pos+i*3].strip())
             graph.edges.append(edge)
         self.update()
 
