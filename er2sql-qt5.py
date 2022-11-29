@@ -119,11 +119,12 @@ class main_window(QMainWindow):
         f.close()
         node_num = int(lines[0])
         for i in range(node_num):
-            i=i*4
+            i=i*5
             node = Node(int(lines[i+2]),int(lines[i+3]),lines[i+4].strip(),lines[i+1].strip())
+            node.iskey = lines[i+5].strip()
             graph.nodes.append(node)
-        edge_num =int(lines[node_num*4+1])
-        start_pos = node_num *4+2
+        edge_num =int(lines[node_num*5+1])
+        start_pos = node_num *5+2
         for i in range(edge_num):
             node1 = graph.nodes[int(lines[start_pos+i*3+1])]
             node2 = graph.nodes[int(lines[start_pos+i*3+2])]
@@ -309,7 +310,7 @@ class main_window(QMainWindow):
                 num = 0
                 for node in graph.nodes:
                     num+=1
-                    string += node.name+"\n"+str(node.x)+"\n"+str(node.y)+"\n"+node.type+"\n"
+                    string += node.name+"\n"+str(node.x)+"\n"+str(node.y)+"\n"+node.type+"\n"+node.iskey+"\n"
                 f.write(str(num)+"\n")
                 f.write(string)
                 num=0
@@ -681,11 +682,8 @@ class Coordinate_Map(QWidget):
                     node.iskey = "True"
                     self.update()
                     return
+
 if __name__ == '__main__':
-
     app = QApplication(sys.argv)
-    
     screen = main_window()
-
-        
     sys.exit(app.exec_())
