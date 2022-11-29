@@ -148,11 +148,15 @@ class main_window(QMainWindow):
     def check_sql(self):
         global graph
         self.coordinate_map.setParent(None)
+        self.text_box.tables.clear()
+        self.text_box.relations.clear()
+        self.text_box.text = ""
         for edge in graph.edges:
             match edge.from_node.type:
                 case "object":
                     table = self.text_box.find_table(edge.from_node.name)
                     if table == "False":
+                        print("no table 1")
                         table = self.text_box.create_table(edge.from_node.name)   
                     if edge.to_node.type == "attribute":
                         t = edge.to_node.att_type
@@ -185,6 +189,7 @@ class main_window(QMainWindow):
                         continue
                     table = self.text_box.find_table(edge.to_node.name)
                     if table == "False":
+                        print("no table 2")
                         table = self.text_box.create_table(edge.to_node.name)
                     t = edge.from_node.att_type
                     att = SQL_Attribute(edge.from_node.name,t)
@@ -192,6 +197,7 @@ class main_window(QMainWindow):
                         table.key.append(att)
                     table.add_attribute(att)
                 case "relation":
+                    print("have relation")
                     relation = self.text_box.find_relation(edge.from_node.name)
                     if relation == "False":
                         relation = self.text_box.create_relation(edge.from_node.name)
@@ -251,11 +257,13 @@ class main_window(QMainWindow):
                     for per_key in key_att:
                         key_str += per_key.name+","
                     if not key_att:
+                        print("not key ")
                         key_str = key_str[:-1]
                     key_str += "),"
                 else:
                     key_str += key_att.name+","
-            key_str = key_str[:-1]
+            if not table.key:
+                key_str = key_str[:-1]
             key_str +="),\n"
             
             for att in table.attributes:
@@ -674,6 +682,8 @@ class Coordinate_Map(QWidget):
         y=event.y()
         cmenu = QMenu(self)
         keyAct = ""
+        inttype =""
+        chartype =""
         rename = cmenu.addAction("重命名")
         for node in graph.nodes:
             if abs(x-(node.x +map_state.origin_offset[0])) <= 40 and \
