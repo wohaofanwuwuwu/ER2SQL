@@ -30,19 +30,28 @@ class SQL_Relation():
         self.name = name
         self.object1 = ""
         self.object2 = ""
-    def add_relation(self,obj):
+        self.obj1type = '1'
+        self.obj2type = '1'
+        self.attributes = []
+    def add_relation(self,obj,t):
         if self.object1 == "":
             self.object1 = obj
+            self.obj1type = t
         else:
-            self.object2 = obj 
+            self.object2 = obj
+            self.obj2type = t 
+    def add_attribute(self,att):
+        self.attributes.append(att)
 class SQL_Attribute():
+    def __init__(self,name,t) -> None:
+        self.name = name
+        self.type = t
+        self.len = "50"
+class SQL_Table():
     def __init__(self,name) -> None:
         self.name = name
-        self.type = "CHAR"
-        self.len = 50
-class SQL_Table():
-    def __init__(self,name,pos) -> None:
-        self.name = name
-        self.str_pos = pos
-        self.attribute_names = []
-        self.relation_names = []
+        self.key = []
+        self.foreign_key =[]
+        self.attributes = []
+    def add_attribute(self,att):
+        self.attributes.append(att)

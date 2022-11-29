@@ -109,39 +109,128 @@ class main_window(QMainWindow):
         for edge in graph.edges:
             match edge.from_node.type:
                 case "object":
-                    table = self.text_box.find_table(edge.name)
+                    table = self.text_box.find_table(edge.from_node.name)
                     if table == "False":
-                         table = self.text_box.create_table(edge.from_node.name)   
+                        table = self.text_box.create_table(edge.from_node.name)   
                     if edge.to_node.type == "attribute":
-                        att = SQL_Attribute(edge.to_node.name)
-                        self.text_box.add_attribute(table,att)
+                        t = "CHAR"
+                        att = SQL_Attribute(edge.to_node.name,t)
+                        if edge.to_node.iskey == "True":
+                            table.key.append(att)
+                        table.add_attribute(att)
                     if edge.to_node.type == "relation":
                         relation = self.text_box.find_relation(edge.to_node.name)
                         if relation == "False":
                             relation = self.text_box.create_relation(edge.to_node.name)
-                            relation.object1 = edge.to_node
+                            relation.object1 = table
+                            relation.obj1type = edge.name
+                        elif (relation.object1 == ""):
+                            relation.object1 = table
+                            relation.obj1type = edge.name
                         else:
-                            relation.object2 = edge.to_node
+                            relation.object2 = table
+                            relation.obj2type = edge.name
                 case "attribute":
                     if edge.to_node.type != "object":
+                        relation = self.text_box.find_relation(edge.to_node.name)
+                        if relation == "False":
+                            relation = self.text_box.create_relation(edge.to_node.name)
+                            t = "CHAR"
+                            att = SQL_Attribute(edge.from_node.name,t)
+                            if edge.from_node.iskey == "True":
+                                relation.key.append(att)
+                            relation.add_attribute(att)
                         continue
-                        #@TODO rise error 
                     table = self.text_box.find_table(edge.to_node.name)
                     if table == "False":
                         table = self.text_box.create_table(edge.to_node.name)
-                    att = SQL_Attribute(edge.from_node.name)
-                    self.text_box.add_attribute(table,att)
+                    t = "CHAR"
+                    att = SQL_Attribute(edge.from_node.name,t)
+                    if edge.to_node.iskey == "True":
+                        table.key.append(att)
+                    table.add_attribute(att)
                 case "relation":
-                    if edge.to_node.type != "object":
-                        pass
-                        #TODO rise error
                     relation = self.text_box.find_relation(edge.from_node.name)
                     if relation == "False":
-                        relation = self.text_box.create_relation()
-                        relation.object1 = edge.to_node
+                        relation = self.text_box.create_relation(edge.from_node.name)
+                    if edge.to_node.type != "object":
+                        t = "CHAR"
+                        att = SQL_Attribute(edge.to_node.name,t)
+                        relation.add_attribute(att)
+                        continue
+                    table = self.text_box.find_table(edge.to_node.name)
+                    if table == "False":
+                        table = self.text_box.create_table(edge.to_node.name)
+                    if relation.object1 == "":
+                        relation.object1 = table
                     else:
-                        relation.object2 = edge.to_node
-                    
+                        relation.object2 = table
+        
+        for relation in self.text_box.relations:
+            table1 = relation.object1
+            table2 = relation.object2
+            key1 = table1.key
+            key2 = table2.key
+            if relation.obj1type == '1':
+                if relation.obj2type == '1':
+                    table1.foreign_key.append(key2)
+                    table1.add_attribute(key2)
+                    for att in relation.attributes:
+                        table1.add_attribute(att)
+                else:
+                    table2.foreign_key.append(key1)
+                    table2.add_attribute(key1)
+                    for att in relation.attributes:
+                        table2.add_attribute(att)
+            else:
+                if relation.obj2type == '1':
+                    table1.foreign_key.append(key2)
+                    table1.add_attribute(key2)
+                    for att in relation.attributes:
+                        table1.add_attribute(att)
+                else:
+                    new_table = self.text_box.create_table(relation.name)
+                    new_table.key.append(key1)
+                    new_table.key.append(key2)
+                    for att in relation.attributes:
+                        new_table.add_attribute(att)
+        
+        for table in self.text_box.tables:
+            insert_str ="CREATE TABLE "+table.name+"(\n"
+            att_str = ""
+            foreign_str = ""
+
+            key_str = "    "+"PRIMARY KEY ("
+            for key_att in table.key:
+                if isinstance(key_att,list):
+                    key_str +="("
+                    for per_key in key_att:
+                        key_str += per_key.name+","
+                    if not key_att:
+                        key_str = key_str[:-1]
+                    key_str += "),"
+                else:
+                    key_str += key_att.name+","
+            key_str +=")\n"
+            
+            for att in table.attributes:
+                if isinstance(att,list):
+                    for per_att in att:
+                       att_str +="    " +per_att.name+" "+per_att.type+"("+per_att.len+"),\n"
+                else:
+                    att_str +="    " +att.name+" "+att.type+"("+att.len+"),\n"
+            
+            for foreign_key in table.foreign_key:
+                foreign_str += "    "+"FOREIGN KEY ("               
+                for per_key in foreign_key: 
+                    foreign_str += per_key.name+","
+                if not foreign_key:
+                    foreign_str = foreign_str[:-1] 
+                foreign_str += "),\n"
+            
+            self.text_box.text += insert_str+att_str+key_str+foreign_str
+            self.text_box.text = self.text_box.text[:-1]+");\n"
+        
         print(self.text_box.text)
         self.text_box.setPlainText(self.text_box.text)
         self.add_widgets(self.text_box)
@@ -255,28 +344,21 @@ class Text_Box(QPlainTextEdit):
         self.text = ""
         self.tables = []
         self.relations = []
-        self.pos = 0
+        self.len = 0
+
     def create_table(self,table_name):
-        self.text = (self.text +"CREATE TABLE "+table_name+"(\n")
-        table = SQL_Table(table_name,self.pos+len(self.text))
-        self.text = self.text + ");\n"
+        table = SQL_Table(table_name)
         self.tables.append(table)
-        self.pos += len(self.text)
         return table
 
     def create_relation(self,relation_name):
         relation = SQL_Relation(relation_name)
         self.relations.append(relation)
         return relation
-    def add_attribute(self,table,att):
-        insert_str = att.name+" "+att.type+" "+" ,\n"
-        self.text = self.text[:table.str_pos] + insert_str + self.text[table.str_pos:]
-        table.attribute_names.append(att.name)
-        table.str_pos += len(insert_str)
-        pass
 
     def find_table(self,table_name):
         for table in self.tables:
+            print(table.name)
             if table.name == table_name:
                 return table
         return "False"
