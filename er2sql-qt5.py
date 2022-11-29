@@ -155,7 +155,7 @@ class main_window(QMainWindow):
                     if table == "False":
                         table = self.text_box.create_table(edge.from_node.name)   
                     if edge.to_node.type == "attribute":
-                        t = "CHAR"
+                        t = edge.to_node.att_type
                         att = SQL_Attribute(edge.to_node.name,t)
                         if edge.to_node.iskey == "True":
                             table.key.append(att)
@@ -177,7 +177,7 @@ class main_window(QMainWindow):
                         relation = self.text_box.find_relation(edge.to_node.name)
                         if relation == "False":
                             relation = self.text_box.create_relation(edge.to_node.name)
-                            t = "CHAR"
+                            t = edge.from_node.att_type
                             att = SQL_Attribute(edge.from_node.name,t)
                             if edge.from_node.iskey == "True":
                                 relation.key.append(att)
@@ -186,7 +186,7 @@ class main_window(QMainWindow):
                     table = self.text_box.find_table(edge.to_node.name)
                     if table == "False":
                         table = self.text_box.create_table(edge.to_node.name)
-                    t = "CHAR"
+                    t = edge.from_node.att_type
                     att = SQL_Attribute(edge.from_node.name,t)
                     if edge.to_node.iskey == "True":
                         table.key.append(att)
@@ -196,7 +196,7 @@ class main_window(QMainWindow):
                     if relation == "False":
                         relation = self.text_box.create_relation(edge.from_node.name)
                     if edge.to_node.type != "object":
-                        t = "CHAR"
+                        t = edge.to_node.att_type
                         att = SQL_Attribute(edge.to_node.name,t)
                         relation.add_attribute(att)
                         continue
@@ -668,20 +668,32 @@ class Coordinate_Map(QWidget):
         return "null"
     def contextMenuEvent(self, event):
         global graph
+        global cursor
+        global map_state
         x=event.x()
         y=event.y()
         cmenu = QMenu(self)
-        quitAct = cmenu.addAction("设置为主键")
+        keyAct = ""
+        rename = cmenu.addAction("重命名")
         for node in graph.nodes:
-            if node.type != "attribute":
-                continue
             if abs(x-(node.x +map_state.origin_offset[0])) <= 40 and \
                 abs(y-(node.y+map_state.origin_offset[1]))<= 20 :
+                if node.type == "attribute":
+                    keyAct = cmenu.addAction("设置为主键")
+                    inttype = cmenu.addAction("设置int类型")
+                    chartype = cmenu.addAction("设置char类型")
                 action = cmenu.exec_(self.mapToGlobal(event.pos()))
-                if action == quitAct:
+                if action == keyAct:
                     node.iskey = "True"
-                    self.update()
-                    return
+                    
+                elif action == rename :
+                    self.set_name(node,cursor.x-map_state.horizon_step,cursor.y-20)
+                elif action == chartype:
+                    node.att_type = "CHAR"
+                elif action == inttype:
+                    node.att_type = "INT"
+                self.update() 
+                return
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
