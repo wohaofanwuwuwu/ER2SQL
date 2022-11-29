@@ -192,6 +192,8 @@ class main_window(QMainWindow):
                     new_table = self.text_box.create_table(relation.name)
                     new_table.key.append(key1)
                     new_table.key.append(key2)
+                    new_table.add_attribute(key1)
+                    new_table.add_attribute(key2)
                     for att in relation.attributes:
                         new_table.add_attribute(att)
         
@@ -211,7 +213,8 @@ class main_window(QMainWindow):
                     key_str += "),"
                 else:
                     key_str += key_att.name+","
-            key_str +=")\n"
+            key_str = key_str[:-1]
+            key_str +="),\n"
             
             for att in table.attributes:
                 if isinstance(att,list):
@@ -229,7 +232,7 @@ class main_window(QMainWindow):
                 foreign_str += "),\n"
             
             self.text_box.text += insert_str+att_str+key_str+foreign_str
-            self.text_box.text = self.text_box.text[:-1]+");\n"
+            self.text_box.text = self.text_box.text[:-1]+"\n);\n"
         
         print(self.text_box.text)
         self.text_box.setPlainText(self.text_box.text)
