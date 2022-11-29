@@ -1,10 +1,5 @@
 class Node():
-    def __init__(self) -> None:
-        self.x=0
-        self.y=0
-        self.type = "default"
-        self.name = ""
-    def __init__(self,x,y,type,name="") -> None:
+    def __init__(self,x=0,y=0,type="default",name="") -> None:
         self.x= x
         self.y =y
         self.type = type

@@ -23,12 +23,13 @@ class cursor_state():
         self.press_position = [0,0] #position relatively offset for screen's left-up corner
 
 class Map_State():
-    def __init__(self):
-        self.woffset = 0
-        self.hoffset = 0
-        self.origin_offset=[0,0]#coordinate origin offset to window's left-up corner
+    def __init__(self,woffset=0,hoffset=0,origin_offset=[0,0]):
+        self.woffset = woffset
+        self.hoffset = hoffset
+        self.origin_offset=origin_offset#coordinate origin offset to window's left-up corner
         self.horizon_step= 65
         self.vertical_step= 30
+
 class Input_Box(QLineEdit):
     def __init__(self,str,s,node) -> None:
         super().__init__(str,s)
@@ -39,7 +40,6 @@ map_state = Map_State()
 
 graph = Graph()
 line_edit = ""
-link_success = "False"
 
 class main_window(QMainWindow):
 
@@ -94,10 +94,51 @@ class main_window(QMainWindow):
         self.new_file(fileMenu,style)
         self.save_file(fileMenu,style)
         self.saveas_file(fileMenu,style)
+        self.open_file(fileMenu,style)
         self.exchange_vision(changeMenu,style)
 
+    def open_file(self,fileMenu,style):
+        FileOpen = QAction('打开(&N)', self)
+        FileOpen.setIcon(style.standardIcon(QStyle.SP_FileIcon))
+        FileOpen.setShortcut(Qt.CTRL + Qt.Key_O)
+        FileOpen.triggered.connect(self.onFileOpen)
+        fileMenu.addAction(FileOpen)
+    
+    def onFileOpen(self):
+        fileName, filetype = QFileDialog.getOpenFileName(self,"选取文件","./","All Files (*);;Graph Files (*.gra)")
+        if fileName != "":
+            self.parse_file(fileName)
+    
+    def parse_file(self,filename):
+        global graph
+        global map_state
+        graph.nodes.clear()
+        graph.edges.clear()
+        f = open(filename)
+        lines = f.readlines()
+        f.close()
+        node_num = int(lines[0])
+        for i in range(node_num):
+            i=i*4
+            node = Node(int(lines[i+2]),int(lines[i+3]),lines[i+4],lines[i+1])
+            graph.nodes.append(node)
+        edge_num =int(lines[node_num*4+1])
+        start_pos = node_num *4+2
+        for i in range(edge_num):
+            node1 = graph.nodes[int(lines[start_pos+i*3+1])]
+            node2 = graph.nodes[int(lines[start_pos+i*3+2])]
+            edge = Edge(node1,node2)
+            edge.set_name(lines[start_pos+i*3])
+            graph.edges.append(edge)
+        self.update()
+
     def onFileNew(self):
-        pass
+        global graph
+        global map_state
+        graph = Graph()
+        map_state = Map_State()
+        self.update()
+        
     def check_er(self):
         self.text_box.setParent(None)
         self.add_widgets(self.coordinate_map)
@@ -259,8 +300,31 @@ class main_window(QMainWindow):
         fileMenu.addAction(FileNew)
     
     def onFileSave(self):
-        pass
-
+        global graph
+        global map_state
+        filename = QFileDialog.getSaveFileName(self,'选择文件','','Graph files(*.gra)')
+        if filename[0] != '':
+            with open(filename[0],'w') as f:
+                string = ""
+                num = 0
+                for node in graph.nodes:
+                    num+=1
+                    string += node.name+"\n"+str(node.x)+"\n"+str(node.y)+"\n"+node.type+"\n"
+                f.write(str(num)+"\n")
+                f.write(string)
+                num=0
+                string = ""
+                for edge in graph.edges:
+                    num+=1
+                    string += edge.name+"\n"+str(graph.nodes.index(edge.from_node))+"\n" \
+                        +str(graph.nodes.index(edge.to_node))+"\n"
+                f.write(str(num)+"\n")
+                f.write(string)
+                string = str(map_state.hoffset)+"\n"\
+                    + str(map_state.woffset)+"\n"\
+                    + str(map_state.origin_offset[0])+"\n"\
+                    + str(map_state.origin_offset[1])+"\n"
+                f.write(string)
     def save_file(self,fileMenu,style):
         FileSave = QAction('保存(&S)', self) 
         FileSave.setIcon(style.standardIcon(QStyle.SP_DialogSaveButton)) 
@@ -269,10 +333,10 @@ class main_window(QMainWindow):
         fileMenu.addAction(FileSave)
 
     def onFileSaveAs(self):
-        pass
-    
+        QFileDialog.getSaveFileName(self,'选择文件','','Graph files(*.pdf)')
+
     def saveas_file(self,fileMenu,style):
-        FileSaveAs = QAction('另存为(&A)...', self)
+        FileSaveAs = QAction('另存为图片(&A)...', self)
         FileSaveAs.setIcon(style.standardIcon(QStyle.SP_DialogSaveButton))
         FileSaveAs.triggered.connect(self.onFileSaveAs)
         fileMenu.addAction(FileSaveAs)
@@ -430,9 +494,11 @@ class Coordinate_Map(QWidget):
             qp.drawLine(cursor.press_position[0],cursor.press_position[1],cursor.x,cursor.y)
         
         for edge in graph.edges:
-            qp.drawLine(edge.from_node.x,edge.from_node.y,edge.to_node.x,edge.to_node.y)
+            qp.drawLine(edge.from_node.x+map_state.origin_offset[0],edge.from_node.y+map_state.origin_offset[1]\
+                ,edge.to_node.x+map_state.origin_offset[0],edge.to_node.y+map_state.origin_offset[1])
             qp.setFont(QFont('SimSun', 25))
-            rect = QRect(int((edge.from_node.x + edge.to_node.x)/2),int((edge.from_node.y + edge.to_node.y)/2),50,50)
+            rect = QRect(int((edge.from_node.x+map_state.origin_offset[0] + edge.to_node.x+map_state.origin_offset[0])/2)\
+                ,int((edge.from_node.y+map_state.origin_offset[1] + edge.to_node.y+map_state.origin_offset[1])/2),50,50)
             qp.drawText(rect,Qt.AlignCenter,edge.name)
             qp.setFont(QFont('SimSun', 10))
         #draw graph
